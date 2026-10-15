@@ -1,0 +1,18 @@
+# Build output
+target/
+*.class
+*.jar
+
+# IntelliJ
+.idea/
+*.iml
+out/
+
+# Secrets - NEVER commit these
+.env
+application-local.properties
+*.pem
+
+# OS files
+.DS_Store
+Thumbs.db
