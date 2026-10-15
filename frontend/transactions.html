@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Transactions | Personal Expense Tracker</title>
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+<a class="skip-link" href="#main">Skip to main content</a>
+
+<div class="app">
+    <aside class="sidebar">
+        <div class="brand">💰 Expense Tracker</div>
+        <nav class="nav" aria-label="Main navigation">
+            <a class="nav-link" href="index.html">📊 Dashboard</a>
+            <a class="nav-link" href="transactions.html" aria-current="page">💸 Transactions</a>
+            <a class="nav-link" href="reports.html">📈 Reports</a>
+            <a class="nav-link" href="categories.html">🏷️ Categories</a>
+        </nav>
+    </aside>
+
+    <main class="content" id="main">
+        <header class="page-header">
+            <div>
+                <h1>Transactions</h1>
+                <p class="subtitle">Add, search, edit and delete your income and expenses</p>
+            </div>
+        </header>
+
+        <div id="page-message" class="alert hidden" role="alert"></div>
+
+        <section class="panel" aria-labelledby="form-title">
+            <h2 id="form-title">Add transaction</h2>
+            <form id="transaction-form">
+                <input type="hidden" id="transaction-id">
+                <div class="form-grid">
+                    <div class="field">
+                        <label for="amount">Amount (₹)</label>
+                        <input id="amount" name="amount" type="number" step="0.01" min="0.01" inputmode="decimal" required>
+                    </div>
+                    <div class="field">
+                        <label for="type">Type</label>
+                        <select id="type" name="type" required>
+                            <option value="EXPENSE">Expense</option>
+                            <option value="INCOME">Income</option>
+                        </select>
+                    </div>
+                    <div class="field">
+                        <label for="category">Category</label>
+                        <select id="category" name="category" required>
+                            <option value="">Loading categories…</option>
+                        </select>
+                    </div>
+                    <div class="field">
+                        <label for="date">Date</label>
+                        <input id="date" name="date" type="date" required>
+                    </div>
+                    <div class="field field-wide">
+                        <label for="description">Description (optional)</label>
+                        <input id="description" name="description" type="text" maxlength="255">
+                    </div>
+                </div>
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-primary" id="submit-button">Save transaction</button>
+                    <button type="button" class="btn btn-secondary hidden" id="cancel-edit">Cancel edit</button>
+                </div>
+            </form>
+        </section>
+
+        <section class="panel" aria-labelledby="filter-title">
+            <h2 id="filter-title">Search and filter</h2>
+            <form id="filter-form" class="filters">
+                <div class="form-grid">
+                    <div class="field">
+                        <label for="filter-search">Search description</label>
+                        <input id="filter-search" type="search" placeholder="e.g. lunch">
+                    </div>
+                    <div class="field">
+                        <label for="filter-type">Type</label>
+                        <select id="filter-type">
+                            <option value="">All types</option>
+                            <option value="INCOME">Income</option>
+                            <option value="EXPENSE">Expense</option>
+                        </select>
+                    </div>
+                    <div class="field">
+                        <label for="filter-category">Category</label>
+                        <select id="filter-category">
+                            <option value="">All categories</option>
+                        </select>
+                    </div>
+                    <div class="field">
+                        <label for="filter-month">Month</label>
+                        <input id="filter-month" type="month">
+                    </div>
+                    <div class="field">
+                        <label for="filter-from">From date</label>
+                        <input id="filter-from" type="date">
+                    </div>
+                    <div class="field">
+                        <label for="filter-to">To date</label>
+                        <input id="filter-to" type="date">
+                    </div>
+                    <div class="field">
+                        <label for="filter-sort">Sort by</label>
+                        <select id="filter-sort">
+                            <option value="date-desc">Newest first</option>
+                            <option value="date-asc">Oldest first</option>
+                            <option value="amount-desc">Highest amount</option>
+                            <option value="amount-asc">Lowest amount</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-primary">Apply filters</button>
+                    <button type="reset" class="btn btn-secondary" id="reset-filters">Reset</button>
+                </div>
+            </form>
+        </section>
+
+        <section class="panel" aria-labelledby="list-title">
+            <h2 id="list-title">All transactions</h2>
+            <div class="table-wrap">
+                <table>
+                    <caption class="sr-only">List of transactions</caption>
+                    <thead>
+                    <tr>
+                        <th scope="col">Date</th>
+                        <th scope="col">Description</th>
+                        <th scope="col">Category</th>
+                        <th scope="col">Type</th>
+                        <th scope="col" class="num">Amount</th>
+                        <th scope="col">Actions</th>
+                    </tr>
+                    </thead>
+                    <tbody id="transactions-body">
+                    <!-- PREVIEW ROW ONLY: Phase 6 JavaScript replaces everything inside this tbody with real data -->
+                    <tr>
+                        <td>2026-10-15</td>
+                        <td>Preview row</td>
+                        <td>Food</td>
+                        <td><span class="badge badge-expense">Expense</span></td>
+                        <td class="num expense">₹0.00</td>
+                        <td>
+                            <div class="row-actions">
+                                <button type="button" class="btn btn-small btn-secondary" aria-label="Edit preview transaction">Edit</button>
+                                <button type="button" class="btn btn-small btn-danger" aria-label="Delete preview transaction">Delete</button>
+                            </div>
+                        </td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+            <p class="empty-state hidden" id="transactions-empty">
+                <strong>No transactions found</strong>
+                Add a transaction above, or change your filters.
+            </p>
+            <nav class="pagination" aria-label="Transaction pages">
+                <button type="button" class="btn btn-secondary btn-small" id="prev-page">Previous</button>
+                <span id="page-info">Page 1 of 1</span>
+                <button type="button" class="btn btn-secondary btn-small" id="next-page">Next</button>
+            </nav>
+        </section>
+    </main>
+</div>
+
+<dialog id="delete-dialog" aria-labelledby="delete-title">
+    <form method="dialog">
+        <h2 id="delete-title">Delete transaction?</h2>
+        <p>This action cannot be undone.</p>
+        <div class="dialog-actions">
+            <button type="submit" value="cancel" class="btn btn-secondary">Cancel</button>
+            <button type="submit" value="confirm" class="btn btn-danger" id="confirm-delete">Delete</button>
+        </div>
+    </form>
+</dialog>
+
+<!-- Phase 6 will add: <script src="js/app.js" defer></script> -->
+</body>
+</html>

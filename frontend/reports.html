@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reports | Personal Expense Tracker</title>
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+<a class="skip-link" href="#main">Skip to main content</a>
+
+<div class="app">
+    <aside class="sidebar">
+        <div class="brand">💰 Expense Tracker</div>
+        <nav class="nav" aria-label="Main navigation">
+            <a class="nav-link" href="index.html">📊 Dashboard</a>
+            <a class="nav-link" href="transactions.html">💸 Transactions</a>
+            <a class="nav-link" href="reports.html" aria-current="page">📈 Reports</a>
+            <a class="nav-link" href="categories.html">🏷️ Categories</a>
+        </nav>
+    </aside>
+
+    <main class="content" id="main">
+        <header class="page-header">
+            <div>
+                <h1>Reports</h1>
+                <p class="subtitle">Monthly summaries, category spending and savings trends</p>
+            </div>
+            <div class="field">
+                <label for="report-month">Month</label>
+                <input id="report-month" type="month">
+            </div>
+        </header>
+
+        <div id="page-message" class="alert hidden" role="alert"></div>
+
+        <div class="cards">
+            <article class="stat-card income">
+                <p class="stat-label">Income</p>
+                <p class="stat-value income" id="report-income">—</p>
+            </article>
+            <article class="stat-card expense">
+                <p class="stat-label">Expenses</p>
+                <p class="stat-value expense" id="report-expenses">—</p>
+            </article>
+            <article class="stat-card">
+                <p class="stat-label">Savings</p>
+                <p class="stat-value" id="report-savings">—</p>
+            </article>
+        </div>
+
+        <div class="grid-2">
+            <section class="panel" aria-labelledby="category-report-title">
+                <h2 id="category-report-title">Spending by category</h2>
+                <div class="table-wrap hidden" id="category-report-wrap">
+                    <table>
+                        <caption class="sr-only">Expense totals per category for the selected month</caption>
+                        <thead>
+                        <tr>
+                            <th scope="col">Category</th>
+                            <th scope="col" class="num">Total spent</th>
+                            <th scope="col" class="num">Share</th>
+                        </tr>
+                        </thead>
+                        <tbody id="category-report-body"></tbody>
+                    </table>
+                </div>
+                <p class="empty-state" id="category-report-empty">
+                    <strong>No expenses in this month</strong>
+                    Choose another month or add some expenses.
+                </p>
+            </section>
+
+            <section class="panel" aria-labelledby="trend-title">
+                <h2 id="trend-title">Savings trend</h2>
+                <div class="chart-box">
+                    <canvas id="savings-chart" role="img" aria-label="Line chart of savings across months"></canvas>
+                    <p class="empty-state" id="trend-empty">
+                        <strong>No trend data yet</strong>
+                        Your savings across months will appear here.
+                    </p>
+                </div>
+            </section>
+        </div>
+
+        <section class="panel" aria-labelledby="monthly-title" style="margin-top: 1.5rem;">
+            <h2 id="monthly-title">Monthly summary</h2>
+            <div class="table-wrap hidden" id="monthly-report-wrap">
+                <table>
+                    <caption class="sr-only">Income, expenses and savings for each month</caption>
+                    <thead>
+                    <tr>
+                        <th scope="col">Month</th>
+                        <th scope="col" class="num">Income</th>
+                        <th scope="col" class="num">Expenses</th>
+                        <th scope="col" class="num">Savings</th>
+                    </tr>
+                    </thead>
+                    <tbody id="monthly-report-body"></tbody>
+                </table>
+            </div>
+            <p class="empty-state" id="monthly-report-empty">
+                <strong>No monthly data yet</strong>
+                Add transactions to see a month-by-month summary.
+            </p>
+        </section>
+    </main>
+</div>
+
+<!-- Phase 6/8 will add the JavaScript for this page -->
+</body>
+</html>

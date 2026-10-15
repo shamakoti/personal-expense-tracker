@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard | Personal Expense Tracker</title>
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+<a class="skip-link" href="#main">Skip to main content</a>
+
+<div class="app">
+    <aside class="sidebar">
+        <div class="brand">💰 Expense Tracker</div>
+        <nav class="nav" aria-label="Main navigation">
+            <a class="nav-link" href="index.html" aria-current="page">📊 Dashboard</a>
+            <a class="nav-link" href="transactions.html">💸 Transactions</a>
+            <a class="nav-link" href="reports.html">📈 Reports</a>
+            <a class="nav-link" href="categories.html">🏷️ Categories</a>
+        </nav>
+    </aside>
+
+    <main class="content" id="main">
+        <header class="page-header">
+            <div>
+                <h1>Dashboard</h1>
+                <p class="subtitle" id="current-month-label">Your financial overview</p>
+            </div>
+            <a class="btn btn-primary" href="transactions.html">+ Add transaction</a>
+        </header>
+
+        <div id="page-message" class="alert hidden" role="alert"></div>
+
+        <h2 class="section-title">All time</h2>
+        <div class="cards">
+            <article class="stat-card income">
+                <p class="stat-label">Total income</p>
+                <p class="stat-value income" id="total-income">—</p>
+            </article>
+            <article class="stat-card expense">
+                <p class="stat-label">Total expenses</p>
+                <p class="stat-value expense" id="total-expenses">—</p>
+            </article>
+            <article class="stat-card">
+                <p class="stat-label">Total savings</p>
+                <p class="stat-value" id="total-savings">—</p>
+            </article>
+        </div>
+
+        <h2 class="section-title">This month</h2>
+        <div class="cards">
+            <article class="stat-card income">
+                <p class="stat-label">Income</p>
+                <p class="stat-value income" id="month-income">—</p>
+            </article>
+            <article class="stat-card expense">
+                <p class="stat-label">Expenses</p>
+                <p class="stat-value expense" id="month-expenses">—</p>
+            </article>
+            <article class="stat-card">
+                <p class="stat-label">Monthly savings</p>
+                <p class="stat-value" id="month-savings">—</p>
+            </article>
+        </div>
+
+        <div class="grid-2">
+            <section class="panel" aria-labelledby="chart-title">
+                <h2 id="chart-title">Income vs expenses by month</h2>
+                <div class="chart-box">
+                    <canvas id="monthly-chart" role="img" aria-label="Bar chart of monthly income versus expenses"></canvas>
+                    <p class="empty-state" id="chart-empty">
+                        <strong>No chart data yet</strong>
+                        Add some transactions and your monthly chart will appear here.
+                    </p>
+                </div>
+            </section>
+
+            <section class="panel" aria-labelledby="category-title">
+                <div class="panel-header">
+                    <h2 id="category-title">Spending by category</h2>
+                    <a href="reports.html">Full report</a>
+                </div>
+                <ul class="category-list" id="category-summary"></ul>
+                <p class="empty-state" id="category-empty">
+                    <strong>No expenses this month</strong>
+                    Category totals will appear once you add expenses.
+                </p>
+            </section>
+        </div>
+
+        <section class="panel" aria-labelledby="recent-title" style="margin-top: 1.5rem;">
+            <div class="panel-header">
+                <h2 id="recent-title">Recent transactions</h2>
+                <a href="transactions.html">View all</a>
+            </div>
+            <div class="table-wrap hidden" id="recent-table-wrap">
+                <table>
+                    <caption class="sr-only">Most recent transactions</caption>
+                    <thead>
+                    <tr>
+                        <th scope="col">Date</th>
+                        <th scope="col">Description</th>
+                        <th scope="col">Category</th>
+                        <th scope="col" class="num">Amount</th>
+                    </tr>
+                    </thead>
+                    <tbody id="recent-body"></tbody>
+                </table>
+            </div>
+            <p class="empty-state" id="recent-empty">
+                <strong>No transactions yet</strong>
+                Use "Add transaction" to record your first income or expense.
+            </p>
+        </section>
+    </main>
+</div>
+
+<!-- Phase 6 will add: <script src="js/app.js" defer></script> -->
+</body>
+</html>
