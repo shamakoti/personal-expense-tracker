@@ -106,3 +106,33 @@ function createElement(tag, className, text) {
     if (text !== undefined) node.textContent = text;
     return node;
 }
+
+// ----- Month and chart helpers -----
+
+// "2026-10" -> "Oct 2026" (or "October 2026" when style is "long")
+function formatMonth(yearMonth, style = "short") {
+    const [year, month] = yearMonth.split("-").map(Number);
+    return new Date(year, month - 1, 1).toLocaleDateString("en-IN", {
+        month: style,
+        year: "numeric",
+    });
+}
+
+// The current month as "yyyy-MM", using the user's local time
+function currentMonthString() {
+    const now = new Date();
+    return now.getFullYear() + "-" + String(now.getMonth() + 1).padStart(2, "0");
+}
+
+// 50000 -> "50K" (used on chart axes)
+function formatCompact(amount) {
+    return new Intl.NumberFormat("en-IN", {
+        notation: "compact",
+        maximumFractionDigits: 1,
+    }).format(amount);
+}
+
+// Shows negative savings in red
+function applySavingsStyle(element, value) {
+    element.classList.toggle("expense", value < 0);
+}
