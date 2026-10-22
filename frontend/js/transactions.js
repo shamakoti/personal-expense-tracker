@@ -1,3 +1,6 @@
+const PAGE_SIZE = 10;
+
+// ----- Form elements -----
 const form = document.getElementById("transaction-form");
 const idInput = document.getElementById("transaction-id");
 const amountInput = document.getElementById("amount");
@@ -8,13 +11,30 @@ const descriptionInput = document.getElementById("description");
 const submitButton = document.getElementById("submit-button");
 const cancelButton = document.getElementById("cancel-edit");
 const formTitle = document.getElementById("form-title");
+
+// ----- Table and dialog elements -----
 const tableBody = document.getElementById("transactions-body");
 const emptyState = document.getElementById("transactions-empty");
 const deleteDialog = document.getElementById("delete-dialog");
 
+// ----- Filter and pagination elements -----
+const filterForm = document.getElementById("filter-form");
+const filterSearch = document.getElementById("filter-search");
+const filterType = document.getElementById("filter-type");
+const filterCategory = document.getElementById("filter-category");
+const filterMonth = document.getElementById("filter-month");
+const filterFrom = document.getElementById("filter-from");
+const filterTo = document.getElementById("filter-to");
+const filterSort = document.getElementById("filter-sort");
+const prevButton = document.getElementById("prev-page");
+const nextButton = document.getElementById("next-page");
+const pageInfo = document.getElementById("page-info");
+
 let categories = [];
 let transactions = [];
 let pendingDeleteId = null;
+let currentPage = 0;
+let totalPages = 1;
 
 // ----- Loading data -----
 
@@ -22,15 +42,45 @@ async function loadCategories() {
     try {
         categories = await apiRequest("/categories");
         fillCategoryOptions();
+        fillFilterCategories();
     } catch (error) {
         showMessage("error", describeError(error));
     }
 }
 
+// Turns the filter form into a query string such as "type=EXPENSE&month=2026-10&page=0"
+function buildQueryString() {
+    const params = new URLSearchParams();
+    const add = (name, value) => {
+        if (value) params.set(name, value);
+    };
+
+    add("search", filterSearch.value.trim());
+    add("type", filterType.value);
+    add("categoryId", filterCategory.value);
+    add("month", filterMonth.value);
+    add("from", filterFrom.value);
+    add("to", filterTo.value);
+    params.set("sort", filterSort.value);
+    params.set("page", currentPage);
+    params.set("size", PAGE_SIZE);
+    return params.toString();
+}
+
 async function loadTransactions() {
     try {
-        transactions = await apiRequest("/transactions");
+        const result = await apiRequest("/transactions?" + buildQueryString());
+
+        // If the current page no longer exists (e.g. the last item on it was deleted), step back
+        if (currentPage > 0 && currentPage >= result.totalPages) {
+            currentPage = Math.max(result.totalPages - 1, 0);
+            return loadTransactions();
+        }
+
+        transactions = result.content;
+        totalPages = Math.max(result.totalPages, 1);
         renderTransactions();
+        updatePagination(result.totalElements);
     } catch (error) {
         showMessage("error", describeError(error));
     }
@@ -55,6 +105,16 @@ function fillCategoryOptions(selectedId) {
     }
 }
 
+function fillFilterCategories() {
+    const selected = filterCategory.value;
+    filterCategory.replaceChildren(new Option("All categories", ""));
+    for (const category of categories) {
+        const kind = category.type === "INCOME" ? "income" : "expense";
+        filterCategory.append(new Option(category.name + " (" + kind + ")", category.id));
+    }
+    filterCategory.value = selected;
+}
+
 // ----- Rendering the table -----
 
 function renderTransactions() {
@@ -73,6 +133,14 @@ function renderTransactions() {
         );
         tableBody.append(row);
     }
+}
+
+function updatePagination(totalElements) {
+    const noun = totalElements === 1 ? " transaction" : " transactions";
+    pageInfo.textContent =
+        "Page " + (currentPage + 1) + " of " + totalPages + " · " + totalElements + noun;
+    prevButton.disabled = currentPage === 0;
+    nextButton.disabled = currentPage + 1 >= totalPages;
 }
 
 function buildTypeCell(transaction) {
@@ -180,6 +248,50 @@ form.addEventListener("submit", async (event) => {
 
 typeSelect.addEventListener("change", () => fillCategoryOptions());
 cancelButton.addEventListener("click", resetForm);
+
+// ----- Search, filter, sort, paginate -----
+
+filterForm.addEventListener("submit", (event) => {
+    event.preventDefault();
+    currentPage = 0;
+    loadTransactions();
+});
+
+// The reset event fires before the fields are cleared, so wait one tick
+filterForm.addEventListener("reset", () => {
+    setTimeout(() => {
+        currentPage = 0;
+        loadTransactions();
+    }, 0);
+});
+
+// A month and a custom date range cannot be used together, so picking one clears the other
+filterMonth.addEventListener("change", () => {
+    if (filterMonth.value) {
+        filterFrom.value = "";
+        filterTo.value = "";
+    }
+});
+filterFrom.addEventListener("change", () => {
+    if (filterFrom.value) filterMonth.value = "";
+});
+filterTo.addEventListener("change", () => {
+    if (filterTo.value) filterMonth.value = "";
+});
+
+prevButton.addEventListener("click", () => {
+    if (currentPage > 0) {
+        currentPage--;
+        loadTransactions();
+    }
+});
+
+nextButton.addEventListener("click", () => {
+    if (currentPage + 1 < totalPages) {
+        currentPage++;
+        loadTransactions();
+    }
+});
 
 // ----- Delete with confirmation -----
 

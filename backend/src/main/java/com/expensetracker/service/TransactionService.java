@@ -1,21 +1,29 @@
 package com.expensetracker.service;
 
+import com.expensetracker.dto.PageResponse;
 import com.expensetracker.dto.TransactionRequest;
 import com.expensetracker.dto.TransactionResponse;
+import com.expensetracker.dto.TransactionSearchCriteria;
 import com.expensetracker.entity.Category;
 import com.expensetracker.entity.Transaction;
 import com.expensetracker.exception.InvalidRequestException;
 import com.expensetracker.exception.ResourceNotFoundException;
 import com.expensetracker.repository.CategoryRepository;
 import com.expensetracker.repository.TransactionRepository;
+import com.expensetracker.util.DateRange;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.RoundingMode;
-import java.util.List;
 
 @Service
 public class TransactionService {
+
+    private static final int MAX_PAGE_SIZE = 100;
 
     private final TransactionRepository transactionRepository;
     private final CategoryRepository categoryRepository;
@@ -27,10 +35,23 @@ public class TransactionService {
     }
 
     @Transactional(readOnly = true)
-    public List<TransactionResponse> getAll() {
-        return transactionRepository.findAllWithCategory().stream()
-                .map(TransactionResponse::from)
-                .toList();
+    public PageResponse<TransactionResponse> search(TransactionSearchCriteria criteria) {
+        DateRange range = (criteria.month() != null && !criteria.month().isBlank())
+                ? DateRange.ofMonth(criteria.month())
+                : DateRange.of(criteria.from(), criteria.to());
+
+        int page = Math.max(criteria.page(), 0);
+        int size = Math.min(Math.max(criteria.size(), 1), MAX_PAGE_SIZE);
+        Pageable pageable = PageRequest.of(page, size, resolveSort(criteria.sort()));
+
+        String search = (criteria.search() == null || criteria.search().isBlank())
+                ? null
+                : criteria.search().trim();
+
+        Page<Transaction> result = transactionRepository.search(
+                search, criteria.type(), criteria.categoryId(), range.from(), range.to(), pageable);
+
+        return PageResponse.from(result.map(TransactionResponse::from));
     }
 
     @Transactional(readOnly = true)
@@ -59,6 +80,18 @@ public class TransactionService {
     public void delete(Long id) {
         Transaction transaction = findTransaction(id);
         transactionRepository.delete(transaction);
+    }
+
+    // Only these exact sort options are allowed, so a client cannot sort by arbitrary fields
+    private Sort resolveSort(String sort) {
+        return switch (sort == null ? "date-desc" : sort) {
+            case "date-desc" -> Sort.by(Sort.Direction.DESC, "transactionDate", "id");
+            case "date-asc" -> Sort.by(Sort.Direction.ASC, "transactionDate", "id");
+            case "amount-desc" -> Sort.by(Sort.Direction.DESC, "amount", "id");
+            case "amount-asc" -> Sort.by(Sort.Direction.ASC, "amount", "id");
+            default -> throw new InvalidRequestException(
+                    "Invalid sort '" + sort + "'. Use date-desc, date-asc, amount-desc or amount-asc");
+        };
     }
 
     private Transaction findTransaction(Long id) {

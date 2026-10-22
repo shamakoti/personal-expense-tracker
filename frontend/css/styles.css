@@ -321,3 +321,8 @@ dialog h2 { margin-top: 0; }
 @media (prefers-reduced-motion: reduce) {
     * { transition: none !important; }
 }
+
+.btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
