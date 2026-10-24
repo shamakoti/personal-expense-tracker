@@ -1,3 +1,4 @@
+-- Upgrade script for databases created before user accounts existed. New installs only need schema.sql.
 USE expense_tracker;
 
 CREATE TABLE IF NOT EXISTS users (
