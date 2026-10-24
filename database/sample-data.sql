@@ -1,5 +1,5 @@
 USE expense_tracker;
-SET @user_email = 'user@gmail.com';
+SET @user_email = 'demo@gmail.com';
     SET @user_id = (SELECT id FROM users WHERE email = @user_email);
 -- Development sample data. Safe to delete later with: DELETE FROM transactions;
 INSERT INTO transactions (user_id, amount, type, category_id, transaction_date, description)
