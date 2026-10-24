@@ -8,16 +8,52 @@ class ApiError extends Error {
     }
 }
 
-// Sends a request to the backend and returns the parsed JSON (or null for 204 No Content).
-async function apiRequest(path, options = {}) {
+// ----- CSRF token -----
+
+let csrfToken = null;
+let csrfHeaderName = "X-CSRF-TOKEN";
+
+async function loadCsrfToken() {
     let response;
     try {
-        response = await fetch(API_BASE + path, {
-            headers: { "Content-Type": "application/json" },
-            ...options,
-        });
+        response = await fetch(API_BASE + "/auth/csrf");
     } catch (networkError) {
         throw new ApiError("Cannot reach the server. Is the application running?", 0);
+    }
+    const data = await response.json();
+    csrfToken = data.token;
+    csrfHeaderName = data.headerName;
+}
+
+function isAuthPage() {
+    const path = window.location.pathname;
+    return path.endsWith("/login.html") || path.endsWith("/register.html");
+}
+
+// ----- Talking to the backend -----
+
+// Sends a request and returns the parsed JSON (or null for 204 No Content).
+async function apiRequest(path, options = {}, isRetry = false) {
+    const method = (options.method || "GET").toUpperCase();
+    const headers = { "Content-Type": "application/json" };
+
+    // Requests that change data must carry the CSRF token
+    if (method !== "GET") {
+        if (!csrfToken) await loadCsrfToken();
+        headers[csrfHeaderName] = csrfToken;
+    }
+
+    let response;
+    try {
+        response = await fetch(API_BASE + path, { ...options, headers });
+    } catch (networkError) {
+        throw new ApiError("Cannot reach the server. Is the application running?", 0);
+    }
+
+    // A 403 on a changing request usually means our token is stale: fetch a new one and retry once
+    if (response.status === 403 && method !== "GET" && !isRetry) {
+        csrfToken = null;
+        return apiRequest(path, options, true);
     }
 
     if (response.status === 204) {
@@ -31,10 +67,18 @@ async function apiRequest(path, options = {}) {
         // the response had no JSON body
     }
 
+    // Not logged in (or the session expired): go to the login page
+    if (response.status === 401 && !isAuthPage()) {
+        window.location.href = "login.html";
+    }
+
     if (!response.ok) {
-        const message = data && data.message
-            ? data.message
-            : "Something went wrong (status " + response.status + ")";
+        let message = "Something went wrong (status " + response.status + ")";
+        if (data && data.message) {
+            message = data.message;
+        } else if (response.status === 401) {
+            message = "Please log in to continue.";
+        }
         throw new ApiError(message, response.status, (data && data.fieldErrors) || {});
     }
 
@@ -136,3 +180,38 @@ function formatCompact(amount) {
 function applySavingsStyle(element, value) {
     element.classList.toggle("expense", value < 0);
 }
+
+// ----- Logged-in user box in the sidebar -----
+
+async function logout() {
+    try {
+        await apiRequest("/auth/logout", { method: "POST" });
+    } catch (error) {
+        // even if this fails, send the user to the login page
+    }
+    csrfToken = null;
+    window.location.href = "login.html";
+}
+
+async function showUserBox() {
+    const sidebar = document.querySelector(".sidebar");
+    if (!sidebar) return; // login and register pages have no sidebar
+
+    try {
+        const user = await apiRequest("/auth/me");
+        const box = createElement("div", "user-box");
+        box.append(
+            createElement("p", "user-name", user.displayName),
+            createElement("p", "user-email", user.email)
+        );
+        const button = createElement("button", "btn btn-secondary btn-small", "Log out");
+        button.type = "button";
+        button.addEventListener("click", logout);
+        box.append(button);
+        sidebar.append(box);
+    } catch (error) {
+        // on a 401 apiRequest has already redirected to the login page
+    }
+}
+
+showUserBox();

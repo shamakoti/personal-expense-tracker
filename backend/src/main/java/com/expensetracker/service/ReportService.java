@@ -31,20 +31,20 @@ public class ReportService {
 
     /** Income, expenses and savings for one month, or for all time when month is null. */
     @Transactional(readOnly = true)
-    public SummaryResponse getSummary(String month) {
+    public SummaryResponse getSummary(Long userId, String month) {
         DateRange range = DateRange.ofMonth(month);
-        BigDecimal income = total(TransactionType.INCOME, range);
-        BigDecimal expenses = total(TransactionType.EXPENSE, range);
+        BigDecimal income = total(userId, TransactionType.INCOME, range);
+        BigDecimal expenses = total(userId, TransactionType.EXPENSE, range);
         return new SummaryResponse(income, expenses, calculateSavings(income, expenses));
     }
 
     /** One entry per month that has transactions, oldest first. */
     @Transactional(readOnly = true)
-    public List<MonthlySummaryResponse> getMonthlySummaries() {
+    public List<MonthlySummaryResponse> getMonthlySummaries(Long userId) {
         Map<YearMonth, BigDecimal> incomeByMonth = new TreeMap<>();
         Map<YearMonth, BigDecimal> expensesByMonth = new TreeMap<>();
 
-        for (MonthlyTotalRow row : transactionRepository.findMonthlyTotals()) {
+        for (MonthlyTotalRow row : transactionRepository.findMonthlyTotals(userId)) {
             YearMonth month = YearMonth.of(row.year(), row.month());
             if (row.type() == TransactionType.INCOME) {
                 incomeByMonth.put(month, row.total());
@@ -68,12 +68,12 @@ public class ReportService {
 
     /** Total per category with each category's share of the whole, biggest first. */
     @Transactional(readOnly = true)
-    public List<CategoryTotalResponse> getCategoryTotals(String month, TransactionType type) {
+    public List<CategoryTotalResponse> getCategoryTotals(Long userId, String month, TransactionType type) {
         DateRange range = DateRange.ofMonth(month);
         TransactionType effectiveType = (type == null) ? TransactionType.EXPENSE : type;
 
         List<CategoryTotalRow> rows =
-                transactionRepository.findCategoryTotals(effectiveType, range.from(), range.to());
+                transactionRepository.findCategoryTotals(userId, effectiveType, range.from(), range.to());
 
         BigDecimal grandTotal = rows.stream()
                 .map(CategoryTotalRow::total)
@@ -101,8 +101,8 @@ public class ReportService {
         return part.multiply(BigDecimal.valueOf(100)).divide(whole, 1, RoundingMode.HALF_UP);
     }
 
-    private BigDecimal total(TransactionType type, DateRange range) {
-        return money(transactionRepository.sumAmount(type, range.from(), range.to()));
+    private BigDecimal total(Long userId, TransactionType type, DateRange range) {
+        return money(transactionRepository.sumAmount(userId, type, range.from(), range.to()));
     }
 
     // Treats "no rows" (null) as zero and always uses two decimal places

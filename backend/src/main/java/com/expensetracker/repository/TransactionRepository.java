@@ -14,57 +14,65 @@ import org.springframework.data.repository.query.Param;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Optional;
 
 public interface TransactionRepository extends JpaRepository<Transaction, Long> {
 
-    // Search and filter. Any parameter that is null is ignored.
+    // Finds a transaction only if it belongs to this user
+    @EntityGraph(attributePaths = "category")
+    Optional<Transaction> findByIdAndUserId(Long id, Long userId);
+
     @EntityGraph(attributePaths = "category")
     @Query("""
             SELECT t FROM Transaction t
-            WHERE (:type IS NULL OR t.type = :type)
+            WHERE t.user.id = :userId
+              AND (:type IS NULL OR t.type = :type)
               AND (:categoryId IS NULL OR t.category.id = :categoryId)
               AND (:fromDate IS NULL OR t.transactionDate >= :fromDate)
               AND (:toDate IS NULL OR t.transactionDate <= :toDate)
               AND (:search IS NULL OR LOWER(t.description) LIKE LOWER(CONCAT('%', :search, '%')))
             """)
-    Page<Transaction> search(@Param("search") String search,
+    Page<Transaction> search(@Param("userId") Long userId,
+                             @Param("search") String search,
                              @Param("type") TransactionType type,
                              @Param("categoryId") Long categoryId,
                              @Param("fromDate") LocalDate fromDate,
                              @Param("toDate") LocalDate toDate,
                              Pageable pageable);
 
-    // Total of one type, optionally limited to a date range
     @Query("""
             SELECT SUM(t.amount) FROM Transaction t
-            WHERE t.type = :type
+            WHERE t.user.id = :userId
+              AND t.type = :type
               AND (:fromDate IS NULL OR t.transactionDate >= :fromDate)
               AND (:toDate IS NULL OR t.transactionDate <= :toDate)
             """)
-    BigDecimal sumAmount(@Param("type") TransactionType type,
+    BigDecimal sumAmount(@Param("userId") Long userId,
+                         @Param("type") TransactionType type,
                          @Param("fromDate") LocalDate fromDate,
                          @Param("toDate") LocalDate toDate);
 
-    // One row per (year, month, type) with the total amount
     @Query("""
             SELECT new com.expensetracker.dto.MonthlyTotalRow(
                 YEAR(t.transactionDate), MONTH(t.transactionDate), t.type, SUM(t.amount))
             FROM Transaction t
+            WHERE t.user.id = :userId
             GROUP BY YEAR(t.transactionDate), MONTH(t.transactionDate), t.type
             """)
-    List<MonthlyTotalRow> findMonthlyTotals();
+    List<MonthlyTotalRow> findMonthlyTotals(@Param("userId") Long userId);
 
-    // One row per category with the total amount, biggest first
     @Query("""
             SELECT new com.expensetracker.dto.CategoryTotalRow(c.id, c.name, SUM(t.amount))
             FROM Transaction t JOIN t.category c
-            WHERE t.type = :type
+            WHERE t.user.id = :userId
+              AND t.type = :type
               AND (:fromDate IS NULL OR t.transactionDate >= :fromDate)
               AND (:toDate IS NULL OR t.transactionDate <= :toDate)
             GROUP BY c.id, c.name
             ORDER BY SUM(t.amount) DESC
             """)
-    List<CategoryTotalRow> findCategoryTotals(@Param("type") TransactionType type,
+    List<CategoryTotalRow> findCategoryTotals(@Param("userId") Long userId,
+                                              @Param("type") TransactionType type,
                                               @Param("fromDate") LocalDate fromDate,
                                               @Param("toDate") LocalDate toDate);
 }

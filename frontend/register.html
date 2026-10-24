@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Register | Personal Expense Tracker</title>
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body class="auth-page">
+<main class="auth-card">
+    <h1>💰 Expense Tracker</h1>
+    <p class="subtitle">Create your account</p>
+
+    <div id="page-message" class="alert hidden" role="alert"></div>
+
+    <form id="register-form">
+        <div class="field">
+            <label for="name">Your name</label>
+            <input id="name" name="name" type="text" autocomplete="name" maxlength="100" required>
+        </div>
+        <div class="field">
+            <label for="email">Email</label>
+            <input id="email" name="email" type="email" autocomplete="email" maxlength="255" required>
+        </div>
+        <div class="field">
+            <label for="password">Password (8 to 72 characters)</label>
+            <input id="password" name="password" type="password" autocomplete="new-password"
+                   minlength="8" maxlength="72" required>
+        </div>
+        <div class="field">
+            <label for="confirm-password">Confirm password</label>
+            <input id="confirm-password" name="confirm-password" type="password"
+                   autocomplete="new-password" minlength="8" maxlength="72" required>
+        </div>
+        <button type="submit" class="btn btn-primary" id="register-button">Create account</button>
+    </form>
+
+    <p class="auth-switch">Already have an account? <a href="login.html">Log in</a></p>
+</main>
+
+<script src="js/api.js" defer></script>
+<script src="js/auth.js" defer></script>
+</body>
+</html>

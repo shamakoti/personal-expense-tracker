@@ -1,8 +1,9 @@
 USE expense_tracker;
-
+SET @user_email = 'user@gmail.com';
+    SET @user_id = (SELECT id FROM users WHERE email = @user_email);
 -- Development sample data. Safe to delete later with: DELETE FROM transactions;
-INSERT INTO transactions (amount, type, category_id, transaction_date, description)
-SELECT v.amount, v.type, c.id, v.tx_date, v.description
+INSERT INTO transactions (user_id, amount, type, category_id, transaction_date, description)
+SELECT @user_id, v.amount, v.type, c.id, v.tx_date, v.description
 FROM (
          SELECT 50000.00 AS amount, 'INCOME'  AS type, 'Salary'     AS cat, '2026-08-01' AS tx_date, 'August salary'            AS description
          UNION ALL SELECT  4200.50, 'EXPENSE', 'Food',       '2026-08-05', 'Groceries'
@@ -23,4 +24,4 @@ FROM (
          UNION ALL SELECT   900.00, 'EXPENSE', 'Other',      '2026-10-12', 'Miscellaneous'
          UNION ALL SELECT  2000.00, 'INCOME',  'Gift',       '2026-10-14', 'Birthday gift'
      ) AS v
-         JOIN categories c ON c.name = v.cat AND c.type = v.type;
+         JOIN categories c ON c.name = v.cat AND c.type = v.type AND c.user_id IS NULL;

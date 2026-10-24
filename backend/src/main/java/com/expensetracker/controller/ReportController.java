@@ -4,7 +4,9 @@ import com.expensetracker.dto.CategoryTotalResponse;
 import com.expensetracker.dto.MonthlySummaryResponse;
 import com.expensetracker.dto.SummaryResponse;
 import com.expensetracker.entity.TransactionType;
+import com.expensetracker.security.AppUserDetails;
 import com.expensetracker.service.ReportService;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -23,19 +25,21 @@ public class ReportController {
     }
 
     @GetMapping("/summary")
-    public SummaryResponse summary(@RequestParam(name = "month", required = false) String month) {
-        return reportService.getSummary(month);
+    public SummaryResponse summary(@AuthenticationPrincipal AppUserDetails user,
+                                   @RequestParam(name = "month", required = false) String month) {
+        return reportService.getSummary(user.getId(), month);
     }
 
     @GetMapping("/monthly")
-    public List<MonthlySummaryResponse> monthly() {
-        return reportService.getMonthlySummaries();
+    public List<MonthlySummaryResponse> monthly(@AuthenticationPrincipal AppUserDetails user) {
+        return reportService.getMonthlySummaries(user.getId());
     }
 
     @GetMapping("/categories")
     public List<CategoryTotalResponse> categories(
+            @AuthenticationPrincipal AppUserDetails user,
             @RequestParam(name = "month", required = false) String month,
             @RequestParam(name = "type", required = false) TransactionType type) {
-        return reportService.getCategoryTotals(month, type);
+        return reportService.getCategoryTotals(user.getId(), month, type);
     }
 }

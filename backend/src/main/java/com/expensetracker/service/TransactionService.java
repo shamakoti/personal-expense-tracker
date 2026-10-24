@@ -10,6 +10,7 @@ import com.expensetracker.exception.InvalidRequestException;
 import com.expensetracker.exception.ResourceNotFoundException;
 import com.expensetracker.repository.CategoryRepository;
 import com.expensetracker.repository.TransactionRepository;
+import com.expensetracker.repository.UserRepository;
 import com.expensetracker.util.DateRange;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -27,15 +28,18 @@ public class TransactionService {
 
     private final TransactionRepository transactionRepository;
     private final CategoryRepository categoryRepository;
+    private final UserRepository userRepository;
 
     public TransactionService(TransactionRepository transactionRepository,
-                              CategoryRepository categoryRepository) {
+                              CategoryRepository categoryRepository,
+                              UserRepository userRepository) {
         this.transactionRepository = transactionRepository;
         this.categoryRepository = categoryRepository;
+        this.userRepository = userRepository;
     }
 
     @Transactional(readOnly = true)
-    public PageResponse<TransactionResponse> search(TransactionSearchCriteria criteria) {
+    public PageResponse<TransactionResponse> search(Long userId, TransactionSearchCriteria criteria) {
         DateRange range = (criteria.month() != null && !criteria.month().isBlank())
                 ? DateRange.ofMonth(criteria.month())
                 : DateRange.of(criteria.from(), criteria.to());
@@ -49,37 +53,38 @@ public class TransactionService {
                 : criteria.search().trim();
 
         Page<Transaction> result = transactionRepository.search(
-                search, criteria.type(), criteria.categoryId(), range.from(), range.to(), pageable);
+                userId, search, criteria.type(), criteria.categoryId(),
+                range.from(), range.to(), pageable);
 
         return PageResponse.from(result.map(TransactionResponse::from));
     }
 
     @Transactional(readOnly = true)
-    public TransactionResponse getById(Long id) {
-        return TransactionResponse.from(findTransaction(id));
+    public TransactionResponse getById(Long userId, Long id) {
+        return TransactionResponse.from(findTransaction(userId, id));
     }
 
     @Transactional
-    public TransactionResponse create(TransactionRequest request) {
-        Category category = findAndCheckCategory(request);
+    public TransactionResponse create(Long userId, TransactionRequest request) {
+        Category category = findAndCheckCategory(userId, request);
         Transaction transaction = new Transaction();
+        transaction.setUser(userRepository.getReferenceById(userId));
         copyFields(transaction, request, category);
         return TransactionResponse.from(transactionRepository.save(transaction));
     }
 
     @Transactional
-    public TransactionResponse update(Long id, TransactionRequest request) {
-        Transaction transaction = findTransaction(id);
-        Category category = findAndCheckCategory(request);
+    public TransactionResponse update(Long userId, Long id, TransactionRequest request) {
+        Transaction transaction = findTransaction(userId, id);
+        Category category = findAndCheckCategory(userId, request);
         copyFields(transaction, request, category);
         // saveAndFlush writes to the database now, so updatedAt is set before we build the response
         return TransactionResponse.from(transactionRepository.saveAndFlush(transaction));
     }
 
     @Transactional
-    public void delete(Long id) {
-        Transaction transaction = findTransaction(id);
-        transactionRepository.delete(transaction);
+    public void delete(Long userId, Long id) {
+        transactionRepository.delete(findTransaction(userId, id));
     }
 
     // Only these exact sort options are allowed, so a client cannot sort by arbitrary fields
@@ -94,14 +99,15 @@ public class TransactionService {
         };
     }
 
-    private Transaction findTransaction(Long id) {
-        return transactionRepository.findById(id)
+    // Someone else's transaction looks exactly like one that does not exist: 404
+    private Transaction findTransaction(Long userId, Long id) {
+        return transactionRepository.findByIdAndUserId(id, userId)
                 .orElseThrow(() -> new ResourceNotFoundException(
                         "Transaction not found with id " + id));
     }
 
-    private Category findAndCheckCategory(TransactionRequest request) {
-        Category category = categoryRepository.findById(request.categoryId())
+    private Category findAndCheckCategory(Long userId, TransactionRequest request) {
+        Category category = categoryRepository.findVisibleById(request.categoryId(), userId)
                 .orElseThrow(() -> new ResourceNotFoundException(
                         "Category not found with id " + request.categoryId()));
 

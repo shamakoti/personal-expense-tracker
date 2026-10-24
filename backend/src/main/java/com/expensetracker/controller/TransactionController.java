@@ -5,10 +5,12 @@ import com.expensetracker.dto.TransactionRequest;
 import com.expensetracker.dto.TransactionResponse;
 import com.expensetracker.dto.TransactionSearchCriteria;
 import com.expensetracker.entity.TransactionType;
+import com.expensetracker.security.AppUserDetails;
 import com.expensetracker.service.TransactionService;
 import jakarta.validation.Valid;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -34,6 +36,7 @@ public class TransactionController {
 
     @GetMapping
     public PageResponse<TransactionResponse> search(
+            @AuthenticationPrincipal AppUserDetails user,
             @RequestParam(name = "search", required = false) String search,
             @RequestParam(name = "type", required = false) TransactionType type,
             @RequestParam(name = "categoryId", required = false) Long categoryId,
@@ -48,29 +51,33 @@ public class TransactionController {
 
         TransactionSearchCriteria criteria = new TransactionSearchCriteria(
                 search, type, categoryId, month, from, to, sort, page, size);
-        return transactionService.search(criteria);
+        return transactionService.search(user.getId(), criteria);
     }
 
     @GetMapping("/{id}")
-    public TransactionResponse getById(@PathVariable("id") Long id) {
-        return transactionService.getById(id);
+    public TransactionResponse getById(@AuthenticationPrincipal AppUserDetails user,
+                                       @PathVariable("id") Long id) {
+        return transactionService.getById(user.getId(), id);
     }
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    public TransactionResponse create(@Valid @RequestBody TransactionRequest request) {
-        return transactionService.create(request);
+    public TransactionResponse create(@AuthenticationPrincipal AppUserDetails user,
+                                      @Valid @RequestBody TransactionRequest request) {
+        return transactionService.create(user.getId(), request);
     }
 
     @PutMapping("/{id}")
-    public TransactionResponse update(@PathVariable("id") Long id,
+    public TransactionResponse update(@AuthenticationPrincipal AppUserDetails user,
+                                      @PathVariable("id") Long id,
                                       @Valid @RequestBody TransactionRequest request) {
-        return transactionService.update(id, request);
+        return transactionService.update(user.getId(), id, request);
     }
 
     @DeleteMapping("/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void delete(@PathVariable("id") Long id) {
-        transactionService.delete(id);
+    public void delete(@AuthenticationPrincipal AppUserDetails user,
+                       @PathVariable("id") Long id) {
+        transactionService.delete(user.getId(), id);
     }
 }

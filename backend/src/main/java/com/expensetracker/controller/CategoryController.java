@@ -3,9 +3,11 @@ package com.expensetracker.controller;
 import com.expensetracker.dto.CategoryRequest;
 import com.expensetracker.dto.CategoryResponse;
 import com.expensetracker.entity.TransactionType;
+import com.expensetracker.security.AppUserDetails;
 import com.expensetracker.service.CategoryService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -28,13 +30,15 @@ public class CategoryController {
 
     @GetMapping
     public List<CategoryResponse> getAll(
+            @AuthenticationPrincipal AppUserDetails user,
             @RequestParam(name = "type", required = false) TransactionType type) {
-        return categoryService.getAll(type);
+        return categoryService.getAll(user.getId(), type);
     }
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    public CategoryResponse create(@Valid @RequestBody CategoryRequest request) {
-        return categoryService.create(request);
+    public CategoryResponse create(@AuthenticationPrincipal AppUserDetails user,
+                                   @Valid @RequestBody CategoryRequest request) {
+        return categoryService.create(user.getId(), request);
     }
 }

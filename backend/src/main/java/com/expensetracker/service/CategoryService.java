@@ -6,7 +6,7 @@ import com.expensetracker.entity.Category;
 import com.expensetracker.entity.TransactionType;
 import com.expensetracker.exception.ConflictException;
 import com.expensetracker.repository.CategoryRepository;
-import org.springframework.data.domain.Sort;
+import com.expensetracker.repository.UserRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -16,29 +16,32 @@ import java.util.List;
 public class CategoryService {
 
     private final CategoryRepository categoryRepository;
+    private final UserRepository userRepository;
 
-    public CategoryService(CategoryRepository categoryRepository) {
+    public CategoryService(CategoryRepository categoryRepository, UserRepository userRepository) {
         this.categoryRepository = categoryRepository;
+        this.userRepository = userRepository;
     }
 
     @Transactional(readOnly = true)
-    public List<CategoryResponse> getAll(TransactionType type) {
-        return categoryRepository.findAll(Sort.by("type", "name")).stream()
+    public List<CategoryResponse> getAll(Long userId, TransactionType type) {
+        return categoryRepository.findVisibleToUser(userId).stream()
                 .filter(category -> type == null || category.getType() == type)
                 .map(CategoryResponse::from)
                 .toList();
     }
 
     @Transactional
-    public CategoryResponse create(CategoryRequest request) {
+    public CategoryResponse create(Long userId, CategoryRequest request) {
         String name = request.name().trim();
 
-        if (categoryRepository.existsByNameIgnoreCaseAndType(name, request.type())) {
+        if (categoryRepository.countVisibleByNameAndType(userId, name, request.type()) > 0) {
             throw new ConflictException(
                     "A " + request.type() + " category named '" + name + "' already exists");
         }
 
         Category category = new Category(name, request.type(), false);
+        category.setUser(userRepository.getReferenceById(userId));
         return CategoryResponse.from(categoryRepository.save(category));
     }
 }
